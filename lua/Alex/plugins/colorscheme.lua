@@ -1,5 +1,5 @@
 return {
-	"folke/tokyonight.nvim",
+	"scottmckendry/cyberdream.nvim",
 	priority = 1000,
 	config = function()
 		local bg = "#011628"
@@ -12,9 +12,9 @@ return {
 		local fg_gutter = "#627E97"
 		local border = "#547998"
 
-		require("tokyonight").setup({
+		require("cyberdream").setup({
 			style = "night",
-			transparent = "true",
+			transparent = true,
 			on_colors = function(colors)
 				colors.bg = "#000000"
 				--	colors.bg = bg
@@ -36,6 +36,6 @@ return {
 			end,
 		})
 
-		vim.cmd("colorscheme tokyonight")
+		vim.cmd("colorscheme cyberdream")
 	end,
 }
