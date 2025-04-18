@@ -12,7 +12,7 @@ return {
 			yellow = "#FFDA7B",
 			red = "#FF4A4A",
 			fg = "#c3ccdc",
-			bg = "#112638",
+			bg = "#181818",
 			inactive_bg = "#2c3043",
 		}
 
@@ -52,7 +52,7 @@ return {
 		-- configure lualine with modified theme
 		lualine.setup({
 			options = {
-				theme = "auto",
+				theme = my_lualine_theme,
 			},
 			sections = {
 				lualine_x = {
