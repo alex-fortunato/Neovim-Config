@@ -78,6 +78,18 @@ return {
 			vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 		end
 
+		-- Enable inline (virtual_text) diagnostics automatically
+		vim.diagnostic.config({
+			virtual_text = {
+				prefix = "●",
+				spacing = 4,
+			},
+			signs = true,
+			underline = true,
+			update_in_insert = false,
+			severity_sort = true,
+		})
+
 		mason_lspconfig.setup_handlers({
 			-- default handler for installed servers
 			function(server_name)
@@ -128,6 +140,38 @@ return {
 						"less",
 						"svelte",
 					},
+				})
+			end,
+			["pyright"] = function()
+				lspconfig["pyright"].setup({
+					capabilities = capabilities,
+					settings = {
+						python = {
+							analysis = {
+								autoSearchPaths = true,
+								useLibraryCodeForTypes = true,
+								diagnosticMode = "workspace",
+								extraPaths = {},
+							},
+						},
+					},
+					before_init = function(_, config)
+						-- Get the project root directory
+						local project_root = vim.fn.getcwd()
+
+						-- Check if .venv exists in the project directory
+						local venv_path = project_root .. "/.venv"
+						if vim.fn.isdirectory(venv_path) == 1 then
+							-- Configure the python.venvPath and python.venv settings
+							config.settings = config.settings or {}
+							config.settings.python = config.settings.python or {}
+							config.settings.python.venvPath = project_root
+							config.settings.python.venv = ".venv"
+
+							-- Optionally print for debugging
+							vim.notify("Pyright using venv: " .. venv_path)
+						end
+					end,
 				})
 			end,
 			["lua_ls"] = function()
