@@ -143,7 +143,38 @@ return {
 				})
 			end,
 			["pyright"] = function()
-				lspconfig["pyright"].setup({
+				-- local lspconfig = require("lspconfig")
+				local util = require("lspconfig.util")
+
+				-- picks a python interpreter from (in order):
+				--  1) $VIRTUAL_ENV, 2) ./venv/bin/python 3) ./.venv/bin/python
+				--  4) system python3, 5) system python
+				local function get_python_path(root_dir)
+					-- 1) if the user already activated a venv, use that
+					if vim.env.VIRTUAL_ENV then
+						return vim.env.VIRTUAL_ENV .. "/bin/python"
+					end
+
+					-- 2 & 3) look for local venvs
+					local candidates = { "venv", ".venv" }
+					for _, name in ipairs(candidates) do
+						local python = util.path.join(root_dir, name, "bin", "python")
+						if vim.fn.executable(python) == 1 then
+							return python
+						end
+					end
+
+					-- 4 & 5) fallback to system
+					if vim.fn.exepath("python3") ~= "" then
+						return vim.fn.exepath("python3")
+					end
+					return vim.fn.exepath("python")
+				end
+
+				lspconfig.pyright.setup({
+					-- make sure we find the project root (git, pyproject.toml, etc)
+					root_dir = util.root_pattern(".git", "pyproject.toml", "setup.py"),
+
 					capabilities = capabilities,
 					settings = {
 						python = {
@@ -151,26 +182,21 @@ return {
 								autoSearchPaths = true,
 								useLibraryCodeForTypes = true,
 								diagnosticMode = "workspace",
-								extraPaths = {},
 							},
+							-- initial stub; on_init will overwrite it
+							pythonPath = get_python_path(vim.fn.getcwd()),
 						},
 					},
-					before_init = function(_, config)
-						-- Get the project root directory
-						local project_root = vim.fn.getcwd()
 
-						-- Check if .venv exists in the project directory
-						local venv_path = project_root .. "/.venv"
-						if vim.fn.isdirectory(venv_path) == 1 then
-							-- Configure the python.venvPath and python.venv settings
-							config.settings = config.settings or {}
-							config.settings.python = config.settings.python or {}
-							config.settings.python.venvPath = project_root
-							config.settings.python.venv = ".venv"
+					-- once the server is starting, give it the right pythonPath
+					on_init = function(client, _)
+						local path = get_python_path(client.config.root_dir)
+						client.config.settings.python.pythonPath = path
 
-							-- Optionally print for debugging
-							vim.notify("Pyright using venv: " .. venv_path)
-						end
+						-- tell Pyright to re-read its settings
+						client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+
+						vim.notify("Pyright using Python: " .. path)
 					end,
 				})
 			end,
